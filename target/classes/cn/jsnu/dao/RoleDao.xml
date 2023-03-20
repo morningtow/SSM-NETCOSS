@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.jsnu.dao.RoleDao">
+    <!--查找所有的角色信息-->
+    <select id="findRoleList" parameterType="Page" resultType="Role">
+        select *
+        from role LIMIT #{begin},#{pageSize}
+    </select>
+    <!--统计角色的数量-->
+    <select id="findRoleRows" parameterType="Page" resultType="int">
+        select count(*)
+        from role
+    </select>
+    <!--根据角色名称查询信息-->
+    <select id="findRoleName" resultType="int">
+        select count(*)
+        from role
+        where name = #{name}
+    </select>
+    <!--添加角色-->
+    <insert id="addRole" parameterType="String">
+        insert into role(name)
+        values (#{name})
+    </insert>
+    <!--修改角色-->
+    <update id="updateRole" parameterType="Role">
+        update role
+        set name=#{name}
+        where id = #{id}
+    </update>
+    <!--删除角色-->
+    <delete id="delRole" parameterType="int">
+        delete
+        from role
+        where id = #{id}
+    </delete>
+    <select id="findRoleById" parameterType="int" resultType="Role">
+        select *
+        from role
+        where id = #{id}
+    </select>
+</mapper>

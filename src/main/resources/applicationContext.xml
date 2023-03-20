@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--1.引入属性配置文件-->
+    <context:property-placeholder
+            location="classpath:jdbc.properties"/>
+    <!--2.配置阿里巴巴的数据库连接池-->
+    <bean id="myDataSource"
+          class="com.alibaba.druid.pool.DruidDataSource"
+          init-method="init" destroy-method="close">
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+    <!--3.注册SqlSessionFactory对象-->
+    <bean id="sqlSessionFactory"
+          class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource"
+                  ref="myDataSource"/>
+        <property name="configLocation"
+                  value="classpath:mybatis-config.xml"/>
+    </bean>
+    <!--4.配置动态代理对象-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName"
+                  value="sqlSessionFactory"/>
+        <property name="basePackage" value="cn.jsnu.dao"/>
+    </bean>
+    <!--5.注册组件扫描器-->
+    <context:component-scan base-package="cn.jsnu.service"/>
+
+    <!--6.声明controller组件扫描器-->
+    <context:component-scan base-package="cn.jsnu.controller"/>
+
+    <!--7.视图解析器-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <!--8.声明注册拦截器-->
+    <!--    <mvc:interceptors>-->
+    <!--        <mvc:interceptor>-->
+    <!--            &lt;!&ndash;8.1 接收所有的请求 &ndash;&gt;-->
+    <!--            <mvc:mapping path="/**"/>-->
+    <!--            &lt;!&ndash;8.2 三个例外的请求&ndash;&gt;-->
+    <!--            <mvc:exclude-mapping path="/login/toLogin.do"/>-->
+    <!--            <mvc:exclude-mapping path="/login/login.do"/>-->
+    <!--            <mvc:exclude-mapping path="/login/createImage.do"/>-->
+    <!--            &lt;!&ndash;8.3 执行拦截对象&ndash;&gt;-->
+    <!--            <bean class="cn.jsnu.interceptor.LoginInterceptor"/>-->
+    <!--        </mvc:interceptor>-->
+    <!--    </mvc:interceptors>-->
+
+    <!--9.支持mvc注解驱动-->
+    <mvc:annotation-driven />
+
+    <!--10.开启aop注解扫描-->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+    <!--11.设置spring事务管理器-->
+    <bean id="txManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="myDataSource"/>
+    </bean>
+    <!--12.设置通知管理-->
+    <tx:advice id="txAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <!--12.1 find开头数据库为只读属性-->
+            <tx:method name="find*" read-only="true"/>
+            <!--12.2 to开头 设置只读属性-->
+            <tx:method name="to*" read-only="true"/>
+            <!--12.3 add开头 设置回滚-->
+            <tx:method name="add*" propagation="REQUIRED"
+                       rollback-for="java.lang.Exception"/>
+            <!--12.4 修改开头-->
+            <tx:method name="update*" propagation="REQUIRED"
+                       rollback-for="java.lang.Exception"/>
+            <!--12.5 删除开头-->
+            <tx:method name="delete*" propagation="REQUIRED"
+                       rollback-for="java.lang.Exception"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--13.设置通知代理对象-->
+    <aop:config proxy-target-class="true">
+        <aop:advisor advice-ref="txAdvice"
+                     pointcut="within(cn.jsnu.controller..*)"/>
+    </aop:config>
+
+
+
+
+</beans>
